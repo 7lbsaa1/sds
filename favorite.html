@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sky7 — المفضلة</title>
+<link rel="icon" href="assets/sky7.png">
+<link rel="stylesheet" href="/assets/styles.css">
+<style>
+  .fav-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+    gap:16px;padding:16px}
+  .fav-item{position:relative;border-radius:14px;overflow:hidden;background:var(--card)}
+  .fav-item img.big{width:100%;aspect-ratio:1;object-fit:cover;display:block}
+  .fav-bar{display:flex;align-items:center;gap:8px;padding:10px 12px}
+  /* Bookmark button — نسخة vanilla من bookmark-icon-button */
+  .bm{position:relative;width:40px;height:40px;border-radius:50%;border:none;
+    background:transparent;cursor:pointer;display:grid;place-items:center}
+  .bm:hover{background:var(--card2)}
+  .bm svg{width:18px;height:18px}
+  .bm .base{stroke:#8a97a6;fill:none;opacity:.7}
+  .bm .fill{stroke:#3b82f6;fill:#3b82f6;position:absolute;
+    opacity:0;transition:opacity .3s}
+  .bm.on .fill{opacity:1}
+  .bm .burst{position:absolute;inset:0;border-radius:50%;pointer-events:none;
+    background:radial-gradient(circle,rgba(59,130,246,.4) 0%,rgba(59,130,246,0) 80%);
+    opacity:0}
+  .bm.on .burst{animation:burst .7s ease-out}
+  @keyframes burst{
+    0%{opacity:0;transform:scale(0)}
+    45%{opacity:.4;transform:scale(1.4)}
+    100%{opacity:0;transform:scale(1)}
+  }
+  .p{position:absolute;width:5px;height:5px;border-radius:50%;background:#3b82f6;
+    filter:blur(1px);left:50%;top:50%;opacity:0}
+  .bm.on .p{animation:fly .6s ease-out forwards}
+  @keyframes fly{
+    0%{opacity:.3;transform:translate(-50%,-50%) scale(0)}
+    50%{opacity:.8;transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) scale(1)}
+    100%{opacity:0;transform:translate(calc(-50% + var(--x)),calc(-50% + var(--y))) scale(0)}
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/home" class="brand"><img src="assets/sky7.png" alt=""> Sky7</a>
+  <div class="nav-icons">
+    <a href="/home" class="nav-btn">🏠</a>
+    <a href="/profile" class="nav-btn">👤</a>
+  </div>
+</nav>
+
+<h2 style="max-width:1200px;margin:22px auto 0;padding:0 20px">🔖 المفضلة</h2>
+<div class="fav-grid" id="grid"></div>
+
+<script type="module">
+import { auth, db } from '/assets/firebase-config.js';
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { ref, get, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+let me, users = {};
+
+onAuthStateChanged(auth, async u => {
+  if (!u) { location.href = '/login'; return; }
+  me = u;
+
+  const us = await get(ref(db, 'users'));
+  users = us.val() || {};
+
+  const s = await get(ref(db, 'users/' + u.uid + '/favorites'));
+  const favs = Object.keys(s.val() || {});
+
+  if (!favs.length) {
+    document.getElementById('grid').innerHTML =
+      `<p style="color:var(--mut);padding:20px">لسه مفيش صور محفوظة.</p>`;
+    return;
+  }
+
+  const ps = await get(ref(db, 'posts'));
+  const all = ps.val() || {};
+
+  document.getElementById('grid').innerHTML = favs
+    .map(id => all[id]).filter(Boolean).map(p => {
+      const uu = users[p.uid] || {};
+      const v  = uu.verified
+        ? `<img class="verified" src="facebook-verified.png" alt="">` : '';
+      return `<div class="fav-item" data-id="${p.id}">
+        ${p.image ? `<img class="big" src="${p.image}" alt="">` : ''}
+        <div class="fav-bar">
+          <button class="bm on" data-id="${p.id}" aria-pressed="true">
+            <div class="burst"></div>
+            ${[0,1,2,3,4].map(i => `
+              <div class="p" style="--x:${Math.cos(i/5*6.28)*20}px;
+                                    --y:${Math.sin(i/5*6.28)*16}px"></div>`).join('')}
+            <svg class="base" viewBox="0 0 24 24" stroke-width="2">
+              <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+            <svg class="fill" viewBox="0 0 24 24" stroke-width="2">
+              <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16z"/></svg>
+          </button>
+          <div style="flex:1;font-size:13px">
+            <b>${uu.firstName || ''}</b> ${v}
+            <div style="color:var(--mut);font-size:12px">
+              ${(p.caption || '').slice(0, 60) || '‏'}</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+  document.querySelectorAll('.bm').forEach(b => {
+    b.onclick = async () => {
+      const id = b.dataset.id;
+      const snap = await get(ref(db, 'users/' + me.uid + '/favorites/' + id));
+      if (snap.exists()) {
+        await update(ref(db, 'users/' + me.uid + '/favorites'), { [id]: null });
+        b.closest('.fav-item').remove();
+      }
+    };
+  });
+});
+</script>
+</body>
+</html>
