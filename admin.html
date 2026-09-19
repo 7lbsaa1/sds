@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sky7 — لوحة الإدارة</title>
+<link rel="icon" href="assets/sky7.png">
+<link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+<div class="auth">
+  <div class="auth-box">
+    <div style="text-align:center;margin-bottom:22px">
+      <img src="assets/sky7.png" width="56" alt="">
+      <h2 style="margin-top:10px">لوحة الإدارة</h2>
+      <p style="color:var(--mut);font-size:13px">
+        الدخول بحساب الأدمن من Firebase Authentication</p>
+    </div>
+    <div class="field"><label>البريد الإلكتروني</label>
+      <input id="email" type="email"></div>
+    <div class="field"><label>كلمة المرور</label>
+      <input id="pass" type="password"></div>
+    <p class="err" id="err"></p>
+    <button class="btn" id="go">دخول</button>
+  </div>
+</div>
+
+<script type="module">
+import { auth, db } from '/assets/firebase-config.js';
+import { signInWithEmailAndPassword, signOut }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { ref, get, update }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const $ = i => document.getElementById(i);
+
+$('go').onclick = async () => {
+  $('err').textContent = '';
+  try {
+    const c = await signInWithEmailAndPassword(auth, $('email').value.trim(), $('pass').value);
+    const s = await get(ref(db, 'users/' + c.user.uid));
+    const u = s.val();
+
+    if (!u?.isAdmin) {
+      await signOut(auth);
+      $('err').textContent = 'هذا الحساب ليس لديه صلاحيات إدارية';
+      return;
+    }
+    update(ref(db, 'users/' + c.user.uid), { lastAdminLogin: Date.now() });
+    location.href = '/admin/users';
+  } catch {
+    $('err').textContent = 'بيانات الدخول غير صحيحة';
+  }
+};
+</script>
+</body>
+</html>
