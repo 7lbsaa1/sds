@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sky7 — إنشاء حساب</title>
+<link rel="icon" href="assets/sky7.png">
+<link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+<div class="auth">
+  <div class="auth-box">
+    <div style="text-align:center;margin-bottom:22px">
+      <img src="assets/sky7.png" width="56" alt="Sky7">
+      <h2 style="margin-top:10px">إنشاء حساب جديد</h2>
+    </div>
+
+    <div class="field">
+      <label>الاسم الأول</label>
+      <input id="fn" type="text" placeholder="عمر">
+    </div>
+    <div class="field">
+      <label>الاسم الأخير</label>
+      <input id="ln" type="text" placeholder="خالد">
+    </div>
+    <div class="field">
+      <label>البريد الإلكتروني</label>
+      <input id="email" type="email" placeholder="you@example.com">
+    </div>
+    <div class="field">
+      <label>كلمة المرور</label>
+      <input id="pass" type="password" placeholder="6 أحرف على الأقل">
+    </div>
+    <p class="err" id="err"></p>
+    <button class="btn" id="regBtn">إنشاء الحساب</button>
+    <p style="text-align:center;margin-top:16px;font-size:14px;color:var(--mut)">
+      عندك حساب؟
+      <a href="/login" style="color:var(--accent);font-weight:700">سجّل دخول</a>
+    </p>
+  </div>
+</div>
+
+<script type="module">
+import { auth, db } from '/assets/firebase-config.js';
+import { createUserWithEmailAndPassword, updateProfile }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { ref, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const err = document.getElementById('err');
+
+document.getElementById('regBtn').onclick = async () => {
+  const fn = fn_.value.trim(), ln = ln_.value.trim();
+  const email = document.getElementById('email').value.trim();
+  const pass = document.getElementById('pass').value;
+  err.textContent = '';
+
+  if (!fn || !ln || !email || !pass) { err.textContent='املأ كل الحقول'; return; }
+  if (pass.length < 6) { err.textContent='كلمة المرور 6 أحرف على الأقل'; return; }
+
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, pass);
+    await updateProfile(cred.user, { displayName: `${fn} ${ln}` });
+
+    await set(ref(db, 'users/' + cred.user.uid), {
+      uid: cred.user.uid, firstName: fn, lastName: ln,
+      email, username: fn + ln + Math.floor(Math.random()*999),
+      bio: '', website: '', avatar: '', cover: '',
+      verified: false, banned: false, isAdmin: false,
+      profileComplete: false, createdAt: Date.now()
+    });
+
+    location.href = '/profile';
+  } catch (e) {
+    err.textContent = e.code === 'auth/email-already-in-use'
+      ? 'البريد مستخدم بالفعل' : 'حصل خطأ: ' + e.code;
+  }
+};
+
+const fn_ = document.getElementById('fn');
+const ln_ = document.getElementById('ln');
+</script>
+</body>
+</html>
