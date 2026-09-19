@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sky7 — تسجيل الدخول</title>
+<link rel="icon" href="assets/sky7.png">
+<link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+<div class="auth">
+  <div class="auth-box">
+    <div style="text-align:center;margin-bottom:24px">
+      <img src="assets/sky7.png" width="64" alt="Sky7">
+      <h2 style="margin-top:10px">Sky7</h2>
+      <p style="color:var(--mut);font-size:14px">شارك لحظاتك في السماء</p>
+    </div>
+    <div class="field">
+      <label>البريد الإلكتروني</label>
+      <input id="email" type="email" placeholder="you@example.com">
+    </div>
+    <div class="field">
+      <label>كلمة المرور</label>
+      <input id="pass" type="password" placeholder="••••••••">
+    </div>
+    <p class="err" id="err"></p>
+    <button class="btn" id="loginBtn">تسجيل الدخول</button>
+    <p style="text-align:center;margin-top:16px;font-size:14px;color:var(--mut)">
+      ماعندكش حساب؟
+      <a href="/register" style="color:var(--accent);font-weight:700">أنشئ حساب</a>
+    </p>
+  </div>
+</div>
+
+<script type="module">
+import { auth, db } from '/assets/firebase-config.js';
+import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { ref, get, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const err = document.getElementById('err');
+
+document.getElementById('loginBtn').onclick = async () => {
+  const email = document.getElementById('email').value.trim();
+  const pass  = document.getElementById('pass').value;
+  err.textContent = '';
+  if (!email || !pass) { err.textContent = 'من فضلك املأ كل الحقول'; return; }
+
+  try {
+    const cred = await signInWithEmailAndPassword(auth, email, pass);
+
+    // فحص الحظر
+    const snap = await get(ref(db, 'users/' + cred.user.uid));
+    const u = snap.val();
+
+    if (u?.banned) { location.href = '/blocked'; return; }
+
+    await set(ref(db, 'users/' + cred.user.uid + '/online'), true);
+    await set(ref(db, 'users/' + cred.user.uid + '/lastSeen'), Date.now());
+
+    location.href = u?.profileComplete ? '/home' : '/profile';
+  } catch (e) {
+    err.textContent = e.code === 'auth/invalid-credential'
+      ? 'البريد أو كلمة المرور غلط' : 'حصل خطأ، حاول تاني';
+  }
+};
+</script>
+</body>
+</html>
