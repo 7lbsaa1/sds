@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sky7 — المستخدمون</title>
+<link rel="icon" href="assets/sky7.png">
+<link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body>
+<!-- Navbar الأدمن -->
+<nav class="nav">
+  <div class="brand"><img src="assets/sky7.png" alt=""> Sky7 · الإدارة</div>
+  <div class="nav-icons">
+    <a href="/admin/users" class="nav-btn" style="background:var(--accent)">👥</a>
+    <a href="/admin/reports" class="nav-btn">🚩</a>
+    <a href="/admin/credentials" class="nav-btn">✅</a>
+  </div>
+</nav>
+
+<div style="max-width:1100px;margin:22px auto;padding:0 20px">
+  <div style="display:flex;gap:12px;align-items:center;margin-bottom:16px">
+    <h2 style="flex:1">العملاء / المستخدمون</h2>
+    <input class="search" id="q" placeholder="بحث بالاسم أو البريد..."
+      style="max-width:300px">
+  </div>
+
+  <div class="card" style="padding:8px">
+    <table class="tbl">
+      <thead><tr>
+        <th>الصورة</th><th>الاسم</th><th>اسم المستخدم</th>
+        <th>البريد</th><th>الحالة</th><th>إجراء</th>
+      </tr></thead>
+      <tbody id="rows"><tr><td colspan="6">جاري التحميل...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<script type="module">
+import { auth, db } from '/assets/firebase-config.js';
+import { onAuthStateChanged, signOut }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { ref, get, update }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const $ = i => document.getElementById(i);
+let all = [];
+
+onAuthStateChanged(auth, async u => {
+  if (!u) { location.href = '/admin'; return; }
+  const s = await get(ref(db, 'users/' + u.uid));
+  if (!s.val()?.isAdmin) { location.href = '/admin'; return; }
+
+  const us = await get(ref(db, 'users'));
+  all = Object.values(us.val() || {});
+  render(all);
+});
+
+function render(list) {
+  $('rows').innerHTML = list.map(u => `
+    <tr>
+      <td><img class="avatar sm" src="${u.avatar || 'assets/default-avatar.png'}"></td>
+      <td>${u.firstName || ''} ${u.lastName || ''}
+        ${u.verified ? '<img class="verified" src="facebook-verified.png" alt="">' : ''}</td>
+      <td style="color:var(--mut)">@${u.username || '—'}</td>
+      <td style="color:var(--mut);font-size:13px">${u.email || '—'}</td>
+      <td>${u.banned
+        ? '<span style="color:#ff6b6b">محظور</span>'
+        : `<span style="color:#25d366">نشط</span>`}</td>
+      <td>
+        <button class="btn sm ${u.banned ? 'ghost' : ''}"
+          onclick="window.__ban('${u.uid}', ${!u.banned})">
+          ${u.banned ? 'إلغاء الحظر' : 'حظر'}
+        </button>
+      </td>
+    </tr>`).join('') || '<tr><td colspan="6">لا مستخدمين</td></tr>';
+}
+
+$('q').oninput = e => {
+  const q = e.target.value.toLowerCase().trim();
+  render(all.filter(u =>
+    (`${u.firstName} ${u.lastName} ${u.username} ${u.email}`)
+      .toLowerCase().includes(q)));
+};
+
+window.__ban = async (uid, ban) => {
+  await update(ref(db, 'users/' + uid), { banned: ban });
+  const us = await get(ref(db, 'users'));
+  all = Object.values(us.val() || {});
+  render(all);
+};
+</script>
+</body>
+</html>
