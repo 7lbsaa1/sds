@@ -1,0 +1,18 @@
+{
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    { "source": "/login",            "destination": "/index.html" },
+    { "source": "/register",         "destination": "/registration.html" },
+    { "source": "/profile",          "destination": "/profile.html" },
+    { "source": "/home",             "destination": "/home.html" },
+    { "source": "/favorites",        "destination": "/favorite.html" },
+    { "source": "/notifications",    "destination": "/notifications.html" },
+    { "source": "/messages",         "destination": "/messages.html" },
+    { "source": "/admin",            "destination": "/admin.html" },
+    { "source": "/admin/users",      "destination": "/users.html" },
+    { "source": "/admin/reports",    "destination": "/reports.html" },
+    { "source": "/admin/credentials","destination": "/usercredentials.html" },
+    { "source": "/blocked",          "destination": "/block.html" }
+  ]
+}
