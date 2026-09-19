@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sky7 — الملف الشخصي</title>
+<link rel="icon" href="assets/sky7.png">
+<link rel="stylesheet" href="/assets/styles.css">
+<style>
+  .cover{height:220px;background:var(--card2);border-radius:14px 14px 0 0;
+         overflow:hidden;position:relative}
+  .cover img{width:100%;height:100%;object-fit:cover}
+  .cover label{position:absolute;inset:0;display:grid;place-items:center;
+         background:#000a;opacity:0;cursor:pointer;transition:.2s}
+  .cover:hover label{opacity:1}
+  .pf-head{display:flex;gap:16px;align-items:flex-end;padding:0 24px 18px;
+         margin-top:-42px}
+  .pf-avatar{position:relative;width:110px;height:110px;border-radius:50%;
+         border:4px solid var(--card);overflow:hidden;background:var(--card2)}
+  .pf-avatar img{width:100%;height:100%;object-fit:cover}
+  .pf-avatar label{position:absolute;inset:0;display:grid;place-items:center;
+         background:#000a;opacity:0;cursor:pointer;transition:.2s}
+  .pf-avatar:hover label{opacity:1}
+  .stats{display:flex;gap:26px;margin-top:8px;font-size:14px;color:var(--mut)}
+  .stats b{color:var(--txt);font-size:16px}
+
+  /* ---------- Dialog (shadcn style, vanilla) ---------- */
+  .ovl{position:fixed;inset:0;z-index:101;background:#000c;display:none}
+  .ovl.open{display:block}
+  .dlg{position:fixed;left:50%;top:50%;z-index:101;transform:translate(-50%,-50%);
+       width:100%;max-width:520px;max-height:calc(100% - 4rem);overflow-y:auto;
+       background:var(--card);border:1px solid var(--line);border-radius:16px;
+       display:none;box-shadow:0 24px 60px #000a}
+  .dlg.open{display:block}
+  .dlg-head{padding:16px 24px;border-bottom:1px solid var(--line);
+       font-weight:700;font-size:16px;position:relative}
+  .dlg-x{position:absolute;inset-inline-start:16px;top:14px;width:28px;height:28px;
+       border-radius:8px;border:none;background:transparent;color:var(--mut);
+       font-size:20px;cursor:pointer}
+  .dlg-x:hover{background:var(--card2)}
+  .dlg-bg{height:128px;background:var(--card2);position:relative;overflow:hidden}
+  .dlg-bg img{width:100%;height:100%;object-fit:cover}
+  .dlg-av{margin-top:-40px;padding:0 24px}
+  .dlg-av .in{width:80px;height:80px;border-radius:50%;border:4px solid var(--card);
+       overflow:hidden;background:var(--card2);position:relative}
+  .dlg-av img{width:100%;height:100%;object-fit:cover}
+  .up{position:absolute;inset:0;display:grid;place-items:center;background:#000a;
+       opacity:0;cursor:pointer;transition:.2s;color:#fff;font-size:18px}
+  .up:hover{opacity:1}
+  .dlg-body{padding:16px 24px 24px}
+  .two{display:flex;gap:14px}
+  .two>*{flex:1}
+  .ok{position:absolute;inset-inline-start:12px;top:50%;transform:translateY(-50%);
+       color:#10b981;font-size:14px}
+  .dlg-foot{display:flex;justify-content:flex-start;gap:10px;padding:16px 24px;
+       border-top:1px solid var(--line)}
+  .cnt{text-align:left;font-size:12px;color:var(--mut);margin-top:6px}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:16px}
+  .grid img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px}
+  @media(max-width:900px){.wrap{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="/home" class="brand"><img src="assets/sky7.png" alt=""> Sky7</a>
+  <div class="nav-icons">
+    <a href="/home" class="nav-btn" title="الرئيسية">🏠</a>
+    <a href="/favorites" class="nav-btn" title="المفضلة">🔖</a>
+  </div>
+</nav>
+
+<div class="wrap" style="grid-template-columns:1fr;max-width:820px">
+  <div class="card" style="overflow:visible">
+    <div class="cover">
+      <img id="coverImg" src="" alt="">
+      <label><input type="file" id="coverInput" accept="image/*" hidden>
+        <span>📷 تغيير الغلاف</span></label>
+    </div>
+
+    <div class="pf-head">
+      <div class="pf-avatar">
+        <img id="avImg" src="" alt="">
+        <label><input type="file" id="avInput" accept="image/*" hidden>
+          <span>📷</span></label>
+      </div>
+      <div style="flex:1;padding-bottom:6px">
+        <h2 id="pName">—</h2>
+        <p style="color:var(--mut);font-size:14px" id="pUser">@user</p>
+        <p style="margin-top:6px;font-size:14px" id="pBio"></p>
+        <div class="stats">
+          <span><b id="cPosts">0</b> منشور</span>
+          <span><b id="cFriends">0</b> صديق</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="padding:0 24px 20px;display:flex;gap:10px">
+      <button class="btn sm" id="openEdit">تعديل الملف الشخصي</button>
+      <a href="/home" class="btn sm ghost" style="display:inline-block">الرئيسية</a>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:18px">
+    <h3 style="padding:16px;border-bottom:1px solid var(--line)">منشوراتي</h3>
+    <div class="grid" id="myPosts"></div>
+  </div>
+</div>
+
+<!-- ===== Edit Profile Dialog ===== -->
+<div class="ovl" id="ovl"></div>
+<div class="dlg" id="dlg">
+  <div class="dlg-head">
+    تعديل الملف الشخصي
+    <button class="dlg-x" id="closeDlg">×</button>
+  </div>
+
+  <div class="dlg-bg">
+    <img id="dBg" src="" alt="">
+    <label class="up"><input type="file" id="dBgInput" accept="image/*" hidden>🖼</label>
+  </div>
+
+  <div class="dlg-av">
+    <div class="in">
+      <img id="dAv" src="" alt="">
+      <label class="up"><input type="file" id="dAvInput" accept="image/*" hidden>📷</label>
+    </div>
+  </div>
+
+  <div class="dlg-body">
+    <div class="two">
+      <div class="field"><label>الاسم الأول</label>
+        <input type="text" id="dFn" placeholder="عمر"></div>
+      <div class="field"><label>الاسم الأخير</label>
+        <input type="text" id="dLn" placeholder="خالد"></div>
+    </div>
+
+    <div class="field"><label>اسم المستخدم</label>
+      <div style="position:relative">
+        <input type="text" id="dUser" placeholder="username" style="padding-inline-start:34px">
+        <span class="ok" id="userCheck" style="display:none">✓</span>
+      </div>
+    </div>
+
+    <div class="field"><label>الموقع الإلكتروني</label>
+      <div style="display:flex">
+        <span style="display:flex;align-items:center;padding:0 12px;
+          border:1px solid var(--line);border-inline-end:none;
+          border-radius:0 10px 10px 0;color:var(--mut);font-size:13px">https://</span>
+        <input type="text" id="dWeb" placeholder="yourwebsite.com"
+          style="border-radius:10px 0 0 10px">
+      </div>
+    </div>
+
+    <div class="field"><label>نبذة عنك</label>
+      <textarea id="dBio" rows="4" maxlength="180"
+        placeholder="اكتب سطرين عن نفسك"></textarea>
+      <p class="cnt"><span id="dLeft">180</span> حرف متبقي</p>
+    </div>
+    <p class="err" id="dErr"></p>
+  </div>
+
+  <div class="dlg-foot">
+    <button class="btn sm" id="saveDlg">حفظ التغييرات</button>
+    <button class="btn sm ghost" id="cancelDlg">إلغاء</button>
+  </div>
+</div>
+
+<script type="module">
+import { auth, db } from '/assets/firebase-config.js';
+import { onAuthStateChanged, updateProfile }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { ref, get, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+import { compressImage } from '/assets/img.js';
+
+let me = null, data = {};
+
+/* ---------- helpers ---------- */
+const $ = id => document.getElementById(id);
+const open  = () => { $('ovl').classList.add('open');  $('dlg').classList.add('open'); };
+const close = () => { $('ovl').classList.remove('open');$('dlg').classList.remove('open'); };
+
+onAuthStateChanged(auth, async user => {
+  if (!user) { location.href = '/login'; return; }
+  const s = await get(ref(db, 'users/' + user.uid));
+  data = s.val() || {}; me = user;
+
+  $('pName').textContent = `${data.firstName||''} ${data.lastName||''}`;
+  $('pUser').textContent = '@' + (data.username||'');
+  $('pBio').textContent  = data.bio || '';
+  $('avImg').src    = data.avatar || 'assets/default-avatar.png';
+  $('coverImg').src = data.cover  || 'assets/default-cover.jpg';
+
+  const ps = await get(ref(db,'posts'));
+  const all = ps.val() || {};
+  const mine = Object.values(all).filter(p => p.uid === user.uid);
+  $('cPosts').textContent = mine.length;
+  $('myPosts').innerHTML = mine.map(p =>
+    `<img src="${p.image}" alt="">`).join('');
+
+  const fr = await get(ref(db,'users/'+user.uid+'/friends'));
+  $('cFriends').textContent = Object.keys(fr.val()||{}).length;
+});
+
+/* ---------- فتح الديالوج ---------- */
+$('openEdit').onclick = () => {
+  $('dFn').value   = data.firstName || '';
+  $('dLn').value   = data.lastName  || '';
+  $('dUser').value = data.username  || '';
+  $('dWeb').value  = data.website   || '';
+  $('dBio').value  = data.bio       || '';
+  $('dLeft').textContent = 180 - ($('dBio').value.length||0);
+  $('dBg').src = data.cover  || 'assets/default-cover.jpg';
+  $('dAv').src = data.avatar || 'assets/default-avatar.png';
+  open();
+};
+$('closeDlg').onclick = $('cancelDlg').onclick = close;
+$('ovl').onclick = close;
+
+$('dBio').oninput = e =>
+  $('dLeft').textContent = 180 - e.target.value.length;
+
+$('dUser').oninput = () => $('userCheck').style.display = 'block';
+
+/* ---------- رفع الصور (ضغط + Base64) ---------- */
+async function handleImg(input, onDone) {
+  const f = input.files?.[0]; if (!f) return;
+  const b64 = await compressImage(f, 900, 0.72);
+  onDone(b64);
+}
+$('avInput').onchange  = e => handleImg(e.target, b => { $('avImg').src = b; data.avatar = b; });
+$('coverInput').onchange = e => handleImg(e.target, b => { $('coverImg').src = b; data.cover = b; });
+$('dAvInput').onchange = e => handleImg(e.target, b => { $('dAv').src = b; data.avatar = b; });
+$('dBgInput').onchange = e => handleImg(e.target, b => { $('dBg').src = b; data.cover = b; });
+
+/* ---------- الحفظ ---------- */
+$('saveDlg').onclick = async () => {
+  const payload = {
+    firstName: $('dFn').value.trim(),
+    lastName:  $('dLn').value.trim(),
+    username:  $('dUser').value.trim(),
+    website:   $('dWeb').value.trim(),
+    bio:       $('dBio').value.trim(),
+    avatar:    data.avatar || '',
+    cover:     data.cover  || '',
+    profileComplete: true
+  };
+  if (!payload.firstName || !payload.username) {
+    $('dErr').textContent = 'الاسم واسم المستخدم مطلوبان'; return;
+  }
+
+  await update(ref(db, 'users/' + me.uid), payload);
+  await updateProfile(me, { displayName: payload.firstName + ' ' + payload.lastName });
+  location.href = '/home';
+};
+</script>
+</body>
+</html>
